@@ -61,7 +61,7 @@ if upload is not None:
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Employees paid", len(paid))
-    col2.metric("Total hours", f"{paid['hours_worked'].sum():,.2f}")
+    col2.metric("Total hours", f"{payroll['hours_worked'].sum():,.2f}")
     col3.metric("Total gross pay", f"${payroll['gross_pay'].sum():,.2f}")
     col4.metric("Overtime weeks", len(overtime))
 
