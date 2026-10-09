@@ -1,6 +1,30 @@
-Write your reflection here.
+The main idea was data lineage. Every pipeline step follows copy-add-return:
+it calls .copy(), adds a new column, and returns the wider frame. It never
+overwrites a value, drops or renames a column, or changes the caller's frame.
+Because "38h 30m" stays in hours beside 38.5 in hours_worked, the manager can
+check a parse by eye and an auditor can trace a paycheck to every input. The
+manual process failed exactly here: raw hours were overwritten, so nobody
+could explain a paycheck.
 
-See reflection.md for what makes a good reflection — be specific, use the
-terminology from this assignment (lineage, grain, element function, Series.apply,
-row apply / axis=1, left merge, NaN, coerce, copy-add-return, boolean index,
-export), and make it actionable.
+For cleaning, parse_hours and clean_currency are element functions that turn
+one messy value into one number. They coerce anything unreadable to 0.0
+instead of crashing, so one bad cell cannot stop payroll. "45m" must be
+divided by 60. Series.apply runs each function down a column into a new one.
+
+The key decision was the merge. The timesheet and roster have different
+grains (one row per person-week versus one per person). A left merge on
+employee_id, timesheet on the left, keeps every timesheet row. An unknown ID
+like E099 gets NaN instead of vanishing. The default inner merge would
+quietly leave that person unpaid, and the row-count test checks for it.
+
+In compute.py, row apply (axis=1) with a lambda gives each function two
+values from one row. I used pd.isna for a missing rate because NaN never
+equals itself, and classify_pay checks "unmatched" first. payroll_export
+builds a new DataFrame from a boolean index of payable rows rather than
+renaming columns, so the pipeline table keeps its lineage. The app uses
+.sum() for totals and len() of a boolean index for counts, with no group-by.
+
+Next time I will run the matching scoped test after writing each function,
+because a passing scoped test with a failing build_payroll test shows the
+problem is upstream. I will also trace one value by hand before coding, so I
+know what the answer should be when a test disagrees.
